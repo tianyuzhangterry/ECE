@@ -21,12 +21,12 @@ from dsets import (
 from experiments.py.eval_utils_counterfact import compute_rewrite_quality_counterfact
 from experiments.py.eval_utils_zsre import compute_rewrite_quality_zsre
 from memit import MEMITHyperParams, apply_memit_to_model
-from tmit import TMITHyperParams, apply_tmit_to_model
-from tmit.tmit_main import apply_tmit_to_model, get_cov
-from ttmit import TTMITHyperParams, apply_ttmit_to_model
-from ttmit.ttmit_mainWi import apply_ttmit_to_model, get_cov
-from ncmit import NCMITHyperParams
-from ncmit.ncmit_main import apply_ncmit_to_model, get_cov
+from ECE-AS import ASHyperParams
+from ECE-AS.AS_main import apply_AS_to_model, get_cov
+from ECE-RS import RSHyperParams
+from ECE-RS.RS_main import apply_RS_to_model, get_cov
+from WI import WIHyperParams
+from ECE-WI.WI_main import apply_WI_to_model, get_cov
 from rome import ROMEHyperParams, apply_rome_to_model
 from util import nethook
 from util.globals import *
@@ -34,12 +34,12 @@ from glue_eval.glue_eval import GLUEEval
 
 ALG_DICT = {
     "MEMIT": (MEMITHyperParams, apply_memit_to_model),
-    "NCMIT": (NCMITHyperParams, apply_ncmit_to_model),
     "ROME": (ROMEHyperParams, apply_rome_to_model),
     "FT": (FTHyperParams, apply_ft_to_model),
     "MEND": (MENDHyperParams, MendRewriteExecutor().apply_to_model),
-    "TMIT": (TMITHyperParams, apply_tmit_to_model),
-    "TTMIT": (TTMITHyperParams, apply_ttmit_to_model)
+    "ECE_AS": (ASHyperParams, apply_AS_to_model),
+    "ECE_WI": (WIHyperParams, apply_WI_to_model),
+    "ECE_RS": (RSHyperParams, apply_RS_to_model)
 }
 
 DS_DICT = {
@@ -125,7 +125,7 @@ def main(
         )
     print(f"Will load cache from {cache_template}")
 
-    if any(alg in alg_name for alg in ["TMIT","TTMIT","NCMIT", "MEMIT_seq", "MEMIT_prune"]):
+    if any(alg in alg_name for alg in ["ECE_AS","ECE_WI","ECE_RS", "MEMIT_seq", "MEMIT_prune"]):
         # Iterate through dataset
         W_out = nethook.get_parameter(model, f"{hparams.rewrite_module_tmp.format(hparams.layers[-1])}.weight")
         cache_c = torch.zeros((len(hparams.layers), W_out.shape[1], W_out.shape[1]), device="cuda")
@@ -155,7 +155,7 @@ def main(
             else dict()
         )
         etc_args = dict(cache_template=cache_template) if any(alg in alg_name for alg in ["ROME", "MEMIT"]) else dict()
-        seq_args = dict(cache_c=cache_c) if any(alg in alg_name for alg in ["NCMIT","TMIT","TTMIT","MEMIT_seq"]) else dict()
+        seq_args = dict(cache_c=cache_c) if any(alg in alg_name for alg in ["ECE_AS","ECE_WI","ECE_RS","MEMIT_seq"]) else dict()
         if cnt == 0 and args.downstream_eval_steps > 0: #do initial GLUE EVAL WITH ORIGINAL MODEL
             glue_results = {'edit_num': -1}
 
@@ -170,7 +170,7 @@ def main(
                 json.dump(glue_results, f, indent=4)
         start = time()
 
-        if alg_name == "TMIT" or alg_name == "TTMIT":
+        if alg_name == "AS" or alg_name == "RS":
             edited_model, cache_c = apply_algo(
                 model,
                 tok,
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--alg_name",
-        choices=["NCMIT","MEMIT_rect", "MEMIT_seq","MEMIT_prune", "MEMIT", "ROME", "FT", "MEND","TMIT","TTMIT"],
+        choices=["ECE_AS", "ECE_WI", "ECE_RS", "MEMIT_rect", "MEMIT_seq","MEMIT_prune", "MEMIT", "ROME", "FT", "MEND"],
         default="ROME",
         help="Editing algorithm to use. Results are saved in results/<alg_name>/<run_id>, "
         "where a new run_id is generated on each run. "
