@@ -26,7 +26,7 @@ retraining is costly, locate-and-edit model editing methods offer an feasible al
 
 ## Quick Start
 ### An example for editing GPT2-XL on counterfact dataset using ECE_WI
-#### 1. Edit Llama3 (8B) model 
+#### 1. Edit GPT2-XL model 
  
     python experiments/evaluate.py --alg_name ECE_WI --model_name gpt2-xl --hparams_fname gpt2-xl.json --ds_name=mcf --dataset_size_limit=2000 --num_edits=100 --downstream_eval_steps=5 
 
